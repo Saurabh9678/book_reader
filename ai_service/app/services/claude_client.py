@@ -1,15 +1,21 @@
 import os
-import anthropic
+from openai import AzureOpenAI
 
-_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-MODEL = "claude-sonnet-4-6"
+_client = AzureOpenAI(
+    api_key=os.environ["AZURE_OPENAI_API_KEY"],
+    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+    api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-01"),
+)
+DEPLOYMENT = os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"]
 
 
 def ask(system_prompt: str, user_message: str, max_tokens: int = 1024) -> str:
-    message = _client.messages.create(
-        model=MODEL,
+    response = _client.chat.completions.create(
+        model=DEPLOYMENT,
         max_tokens=max_tokens,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_message}],
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ],
     )
-    return message.content[0].text
+    return response.choices[0].message.content or ""
